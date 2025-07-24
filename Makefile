@@ -18,3 +18,9 @@ ifeq ($(OS),Windows_NT)
 else
 	rm -rf bin
 endif
+
+lint:
+	
+
+test:
+	go test -v ./...
