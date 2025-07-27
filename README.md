@@ -21,3 +21,30 @@ Here's an idea of what the target architecture would look like, this is not
 fleshed out so it could change based on what's possible:
 
 ![go-shorty architecture](./.github/assets/go-shorty-arch.png)
+
+## Manual DNS Configuration
+### Windows
+To enable go-shorty redirects, open Powershell with Administrator permissions: 
+```powershell
+$iface = Get-NetAdapter | Where-Object Status -eq 'Up' | Select-Object -First 1 -Expand Name
+Set-DnsClientServerAddress -InterfaceAlias $iface -ServerAddresses 127.0.0.1
+ipconfig /flushdns
+```
+
+Then to restore default settings, using Powershell with Administrator:
+```powershell
+Set-DnsClientServerAddress -InterfaceAlias $iface -ResetServerAddresses
+ipconfig /flushdns
+```
+
+### MacOS
+To enable go-shorty redirects, run the following with root:
+```bash
+networksetup -setdnsservers "Wi‑Fi" 127.0.0.1
+sudo killall -HUP mDNSResponder; sudo dscacheutil -flushcache
+```
+
+Then to restore default settings:
+```bash
+networksetup -setdnsservers "Wi‑Fi" empty
+```
