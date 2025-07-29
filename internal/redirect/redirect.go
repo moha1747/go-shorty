@@ -9,13 +9,6 @@ import (
 	"github.com/moha1747/go-shorty/internal/config"
 )
 
-// Shortcuts maps short names to their target URLs
-var Shortcuts = map[string]string{
-	"go": "https://go.dev",
-	"gh": "https://github.com",
-	"so": "https://stackoverflow.com",
-}
-
 // RedirectConfig holds configuration for the HTTP redirect server
 type RedirectConfig struct {
 	Address   string
@@ -26,10 +19,12 @@ type RedirectConfig struct {
 // NewRedirectConfigFromViper creates a redirect config from the global Viper config
 func NewRedirectConfigFromViper(cfg *config.Config) *RedirectConfig {
 	if cfg == nil {
+		// Use defaults from config package if no config is provided
+		defaultCfg := config.DefaultConfig()
 		return &RedirectConfig{
-			Address:   "127.0.0.1",
-			Port:      80,
-			Shortcuts: Shortcuts,
+			Address:   defaultCfg.Redirect.Address,
+			Port:      defaultCfg.Redirect.Port,
+			Shortcuts: defaultCfg.Redirect.Shortcuts,
 		}
 	}
 
