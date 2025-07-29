@@ -9,8 +9,8 @@ run: $(BINARY)
 # Build the target BINARY; by making this target the title of the BINARY, make
 # will ignore rebuilding the binary if it is available. TODO: implement build
 # caching logic?
-$(BINARY):
-	go run ./cmd/build
+$(BINARY): main.go
+	go build -o $(BINARY) main.go
 
 clean:
 ifeq ($(OS),Windows_NT)
