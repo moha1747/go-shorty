@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+
 	"strings"
 	"time"
 
@@ -21,46 +22,14 @@ type DNSClient interface {
 	Exchange(req *dns.Msg, server string) (*dns.Msg, time.Duration, error)
 }
 
-// Config holds the configuration for the DNS server
-type Config struct {
-	UpstreamDNS string
-	LocalIP     net.IP
-	Port        int
-}
-
-// DefaultConfig returns the default configuration
-func DefaultConfig() *Config {
-	return &Config{
-		UpstreamDNS: "1.1.1.1:53",
-		LocalIP:     net.ParseIP("127.0.0.1"),
-		Port:        53,
-	}
-}
-
-// NewConfigFromViper creates a DNS config from the global Viper config
-func NewConfigFromViper(cfg *config.Config) *Config {
-	if cfg == nil {
-		return DefaultConfig()
-	}
-
-	return &Config{
-		UpstreamDNS: cfg.DNS.UpstreamDNS,
-		LocalIP:     net.ParseIP(cfg.DNS.LocalIP),
-		Port:        cfg.DNS.Port,
-	}
-}
-
 // DNSServerHandler implements the DNSHandler interface
 type DNSServerHandler struct {
-	config *Config
+	config *config.DNSConfig
 	client DNSClient
 }
 
 // NewDNSServerHandler creates a new DNSServerHandler with the given configuration
-func NewDNSServerHandler(config *Config, client DNSClient) *DNSServerHandler {
-	if config == nil {
-		config = DefaultConfig()
-	}
+func NewDNSServerHandler(config *config.DNSConfig, client DNSClient) *DNSServerHandler {
 	if client == nil {
 		client = &dns.Client{}
 	}
@@ -71,13 +40,14 @@ func NewDNSServerHandler(config *Config, client DNSClient) *DNSServerHandler {
 }
 
 // StartDNSServer initializes the DNS server to handle requests for .u domains
-func StartDNSServer(cfg *config.Config) {
-	dnsConfig := NewConfigFromViper(cfg)
-	handler := NewDNSServerHandler(dnsConfig, nil)
+func StartDNSServer(cfg *config.DNSConfig) {
+	handler := NewDNSServerHandler(cfg, nil)
 	dns.HandleFunc(".", handler.HandleRequest)
 
-	port := fmt.Sprintf(":%d", dnsConfig.Port)
+	// Print custom extension configuration
+	log.Printf("DNS using custom extension \".%s\"", cfg.Extension)
 
+	port := fmt.Sprintf(":%d", cfg.Port)
 	go func() {
 		log.Printf("DNS UDP server running on %s", port)
 		if err := (&dns.Server{Addr: port, Net: "udp"}).ListenAndServe(); err != nil {
@@ -97,12 +67,15 @@ func (h *DNSServerHandler) HandleRequest(w dns.ResponseWriter, r *dns.Msg) {
 	q := r.Question[0]
 	name := q.Name
 
-	if strings.HasSuffix(name, ".u.") {
-		h.handleLocalDomain(w, r, name)
-		return
-	}
+	// example: ".u"
+	extensionSuffix := "." + h.config.Extension
 
-	h.forwardRequest(w, r, name)
+	// If request contains custom extension, point to redirect server
+	if strings.HasSuffix(name, extensionSuffix) {
+		h.handleLocalDomain(w, r, name)
+	} else { // Otherwise send to upstream DNS
+		h.forwardRequest(w, r, name)
+	}
 }
 
 // handleLocalDomain handles .u domain requests by returning a local IP
@@ -118,7 +91,7 @@ func (h *DNSServerHandler) handleLocalDomain(w dns.ResponseWriter, r *dns.Msg, n
 			Class:  dns.ClassINET,
 			Ttl:    0,
 		},
-		A: h.config.LocalIP,
+		A: net.ParseIP(h.config.LocalIP),
 	}
 	msg.Answer = []dns.RR{rr}
 

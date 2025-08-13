@@ -1,16 +1,16 @@
 # Go-Shorty Configuration
-
-# DNS Server Configuration
+## DNS Server Configuration
 dns:
   port: 53
   upstream_dns: "1.1.1.1:53"
   local_ip: "127.0.0.1"
+  extension: "u"
 
-# HTTP Redirect Server Configuration
+## HTTP Redirect Server Configuration
 redirect:
   port: 80
   address: "127.0.0.1"
   shortcuts:
     go: "https://go.dev"
     gh: "https://github.com"
-    so: "https://stackoverflow.com"
+    so: "https://stackoverflow.comadsf"
