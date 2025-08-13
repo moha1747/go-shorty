@@ -18,6 +18,7 @@ type DNSConfig struct {
 	Port        int    `mapstructure:"port"`
 	UpstreamDNS string `mapstructure:"upstream_dns"`
 	LocalIP     string `mapstructure:"local_ip"`
+	Extension   string `mapstructure:"extension"`
 }
 
 // RedirectConfig holds HTTP redirect server configuration
@@ -34,6 +35,7 @@ func DefaultConfig() *Config {
 			Port:        53,
 			UpstreamDNS: "1.1.1.1:53",
 			LocalIP:     "127.0.0.1",
+			Extension:   "u",
 		},
 		Redirect: RedirectConfig{
 			Port:    80,
@@ -59,11 +61,7 @@ func LoadConfig(configPath string) (*Config, error) {
 	if configPath != "" {
 		v.AddConfigPath(configPath)
 	}
-
-	// Add default paths to look for the config file
-	v.AddConfigPath(".")                // look for config in the working directory
-	v.AddConfigPath("./config")         // look for config in ./config/ directory
-	v.AddConfigPath("$HOME/.go-shorty") // look in home directory
+	v.AddConfigPath("./config")
 
 	// Set up environment variables
 	v.SetEnvPrefix("GOSHORTY")

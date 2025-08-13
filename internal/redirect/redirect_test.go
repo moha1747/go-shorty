@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	appconfig "github.com/moha1747/go-shorty/internal/config"
+	"github.com/moha1747/go-shorty/internal/config"
 )
 
 func TestRedirectHandler(t *testing.T) {
@@ -81,47 +81,6 @@ func TestRedirectHandler(t *testing.T) {
 	}
 }
 
-func TestNewRedirectConfigFromViper(t *testing.T) {
-	// Test with nil config
-	config := NewRedirectConfigFromViper(nil)
-	defaultCfg := appconfig.DefaultConfig()
-
-	if config.Address != defaultCfg.Redirect.Address {
-		t.Errorf("Expected default address %s, got %s", defaultCfg.Redirect.Address, config.Address)
-	}
-	if config.Port != defaultCfg.Redirect.Port {
-		t.Errorf("Expected default port %d, got %d", defaultCfg.Redirect.Port, config.Port)
-	}
-	if config.Shortcuts == nil {
-		t.Error("Expected shortcuts map to be initialized")
-	}
-	if target, ok := config.Shortcuts["go"]; !ok || target != "https://go.dev" {
-		t.Errorf("Expected shortcut 'go' to point to 'https://go.dev', got %s", target)
-	}
-
-	// Test with custom config
-	customConfig := &appconfig.Config{
-		Redirect: appconfig.RedirectConfig{
-			Address: "0.0.0.0",
-			Port:    8080,
-			Shortcuts: map[string]string{
-				"custom": "https://custom.example.com",
-			},
-		},
-	}
-
-	redirectConfig := NewRedirectConfigFromViper(customConfig)
-	if redirectConfig.Address != "0.0.0.0" {
-		t.Errorf("Expected custom address 0.0.0.0, got %s", redirectConfig.Address)
-	}
-	if redirectConfig.Port != 8080 {
-		t.Errorf("Expected custom port 8080, got %d", redirectConfig.Port)
-	}
-	if target, ok := redirectConfig.Shortcuts["custom"]; !ok || target != "https://custom.example.com" {
-		t.Errorf("Expected shortcut 'custom' to point to 'https://custom.example.com', got %s", target)
-	}
-}
-
 func TestRedirectServerConfigIntegration(t *testing.T) {
 	// Create a temporary directory for the test config
 	tempDir, err := os.MkdirTemp("", "goshorty-redirect-test")
@@ -153,13 +112,10 @@ redirect:
 	}
 
 	// Load the config from the file
-	cfg, err := appconfig.LoadConfig(tempDir)
+	cfg, err := config.LoadConfig(tempDir)
 	if err != nil {
 		t.Fatalf("Failed to load config: %v", err)
 	}
-
-	// Create a redirect config from the loaded config
-	redirectCfg := NewRedirectConfigFromViper(cfg)
 
 	// Verify the redirect config has the correct shortcuts from the file
 	expectedShortcuts := map[string]string{
@@ -168,7 +124,7 @@ redirect:
 	}
 
 	for shortcut, expected := range expectedShortcuts {
-		actual, ok := redirectCfg.Shortcuts[shortcut]
+		actual, ok := cfg.Redirect.Shortcuts[shortcut]
 		if !ok {
 			t.Errorf("Expected shortcut '%s' not found in loaded config", shortcut)
 		} else if actual != expected {
@@ -177,7 +133,7 @@ redirect:
 	}
 
 	// Test the handler with the loaded shortcuts
-	handler := RedirectHandler(redirectCfg.Shortcuts)
+	handler := RedirectHandler(cfg.Redirect.Shortcuts)
 	server := httptest.NewServer(handler)
 	defer server.Close()
 

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/miekg/dns"
+	"github.com/moha1747/go-shorty/internal/config"
 )
 
 // MockDNSResponseWriter implements the dns.ResponseWriter interface for testing
@@ -70,9 +71,9 @@ func (m *MockDNSClient) Exchange(req *dns.Msg, server string) (*dns.Msg, time.Du
 
 func TestHandleLocalDomain(t *testing.T) {
 	// Create a new handler with a test configuration
-	config := &Config{
+	config := &config.DNSConfig{
 		UpstreamDNS: "8.8.8.8:53",
-		LocalIP:     net.ParseIP("192.168.1.1"),
+		LocalIP:     "192.168.1.1",
 		Port:        53,
 	}
 	handler := NewDNSServerHandler(config, nil)
@@ -102,7 +103,7 @@ func TestHandleLocalDomain(t *testing.T) {
 		t.Fatalf("Expected answer of type *dns.A, got %T", mockWriter.lastMsg.Answer[0])
 	}
 
-	if !answer.A.Equal(config.LocalIP) {
+	if !answer.A.Equal(net.ParseIP(config.LocalIP)) {
 		t.Errorf("Expected IP %v, got %v", config.LocalIP, answer.A)
 	}
 }
@@ -119,7 +120,7 @@ func TestForwardRequest(t *testing.T) {
 	}
 
 	// Create a handler with the mock client
-	config := &Config{UpstreamDNS: "8.8.8.8:53", Port: 53}
+	config := &config.DNSConfig{UpstreamDNS: "8.8.8.8:53", Port: 53, Extension: "u"}
 	handler := NewDNSServerHandler(config, mockClient)
 
 	// Create a test request for a non-.u domain
@@ -150,7 +151,7 @@ func TestForwardRequestFailure(t *testing.T) {
 	}
 
 	// Create a handler with the mock client
-	config := &Config{UpstreamDNS: "8.8.8.8:53", Port: 53}
+	config := &config.DNSConfig{UpstreamDNS: "8.8.8.8:53", Port: 53, Extension: "u"}
 	handler := NewDNSServerHandler(config, mockClient)
 
 	// Create a test request
