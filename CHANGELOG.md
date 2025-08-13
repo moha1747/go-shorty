@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/moha1747/go-shorty/compare/v1.0.0...v1.1.0) (2025-08-13)
+
+
+### Features
+
+* **config:** Cleaned up config implementation. ([9937b9f](https://github.com/moha1747/go-shorty/commit/9937b9f7109791548110a5ed4f28201fa2e2e2cd))
+
 ## 1.0.0 (2025-08-12)
 
 
